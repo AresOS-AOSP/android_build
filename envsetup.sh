@@ -1124,58 +1124,6 @@ set_global_paths
 source_vendorsetup
 addcompletions
 
-function setup_ccache() {
-    # check and set ccache path on envsetup
-    if [ -z "${CCACHE_EXEC}" ]; then
-        if command -v ccache &>/dev/null; then
-            export USE_CCACHE=1
-            export CCACHE_EXEC=$(command -v ccache)
-            [ -z "${CCACHE_DIR}" ] && export CCACHE_DIR="$HOME/.ccache"
-            echo "ccache directory found, CCACHE_DIR set to: $CCACHE_DIR" >&2
-
-            CCACHE_MAXSIZE="${CCACHE_MAXSIZE:-40G}"
-            DIRECT_MODE="${DIRECT_MODE:-false}"
-
-            $CCACHE_EXEC -o compression=true -o direct_mode="${DIRECT_MODE}" -M "${CCACHE_MAXSIZE}" \
-                && echo "ccache enabled, CCACHE_EXEC set to: $CCACHE_EXEC, CCACHE_MAXSIZE set to: $CCACHE_MAXSIZE, direct_mode set to: $DIRECT_MODE" >&2 \
-                || echo "Warning: Could not set cache size limit. Please check ccache configuration." >&2
-
-            if [ -d "$CCACHE_DIR" ]; then
-                CURRENT_CCACHE_SIZE_BYTES=$(du -sb "$CCACHE_DIR" 2>/dev/null | awk '{print $1}')
-                CURRENT_CCACHE_SIZE_GB=$(echo "$CURRENT_CCACHE_SIZE_BYTES" | awk '{printf "%.2f\n", $1 / 1000 / 1000 / 1000}')
-
-                if [ -n "$CURRENT_CCACHE_SIZE_GB" ]; then
-                    echo "Current ccache size is: ${CURRENT_CCACHE_SIZE_GB} GB" >&2
-                else
-                    echo "No cached files in ccache." >&2
-                fi
-            else
-                echo "Warning: ccache directory does not exist: $CCACHE_DIR" >&2
-            fi
-        else
-            echo "Error: ccache not found. Please install ccache." >&2
-        fi
-    fi
-}
-
-function remove_broken_build_tools() {
-    # Check for files matching each pattern and delete if they exist
-    if ls prebuilts/build-tools/path/*/date >/dev/null 2>&1; then
-        for file in prebuilts/build-tools/path/*/date; do
-            rm -f "$file"  # Remove each date file if it exists
-        done
-    fi
-
-    if ls prebuilts/build-tools/path/*/tar >/dev/null 2>&1; then
-        for file in prebuilts/build-tools/path/*/tar; do
-            rm -f "$file"  # Remove each tar file if it exists
-        done
-    fi
-}
-
-setup_ccache
-remove_broken_build_tools
-
 export ANDROID_BUILD_TOP=$(gettop)
 
 . $ANDROID_BUILD_TOP/vendor/lineage/build/envsetup.sh
